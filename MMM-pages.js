@@ -45,6 +45,9 @@ Module.register('MMM-pages', {
     // Disable rotation if an invalid input is given
     this.config.rotationTime = Math.max(this.config.rotationTime, 0);
     this.config.rotationDelay = Math.max(this.config.rotationDelay, 0);
+    this.timeOutTimer;
+    this.blankTime = this.config.blankTime;
+    this.resetPageTimeOut();
   },
 
   /**
@@ -65,26 +68,34 @@ Module.register('MMM-pages', {
           + `to change to page ${payload} of type ${typeof payload}`);
         this.curPage = payload;
         this.updatePages();
+	this.resetPageTimeOut();
         break;
       case 'PAGE_INCREMENT':
         Log.log('[Pages]: received a notification to increment pages!');
         this.changePageBy(payload, 1);
         this.updatePages();
+	this.resetPageTimeOut();
         break;
       case 'PAGE_DECREMENT':
         Log.log('[Pages]: received a notification to decrement pages!');
         this.changePageBy(-payload, -1);
         this.updatePages();
+	this.resetPageTimeOut();
         break;
       case 'PAGE_ACTIVATE':
 	Log.log('[Pages]: received a notification to activate pages!');
 	this.active = true;
+	this.sendNotification("LIGHTS_SET", 1);
 	this.updatePages();
+	this.resetPageTimeOut();
 	break;
       case 'PAGE_DEFAULT':
-//	Log.log('[Pages]: received a notification to deactivate pages!');
+	Log.log('[Pages]: received a notification to deactivate pages!');
 	this.active = false;
+		    
+	this.sendNotification("LIGHTS_SET", 0);
 	this.updatePages();
+	this.resetPageTimeOut();
 	break;
       case 'DOM_OBJECTS_CREATED':
         Log.log('[Pages]: received that all objects are created;'
@@ -99,7 +110,7 @@ Module.register('MMM-pages', {
       default: // Do nothing
     }
   },
-
+  
   /**
    * Changes the internal page number by the specified amount. If the provided
    * amount is invalid, use the fallback amount. If the fallback amount is
@@ -173,7 +184,17 @@ Module.register('MMM-pages', {
         { lockString: self.identifier }
       )), this.config.animationTime / 2);
   },
-
+  resetPageTimeOut: function(){
+	  clearTimeout(this.timeoutTimer);
+          var thethis = this;
+	  Log.log("set timeout"+this.blankTime.toString());
+	  this.timeoutTimer=setTimeout(function(){
+		  thethis.active=false;
+		  thethis.sendNotification("LIGHTS_SET", 0);
+		  thethis.updatePages();
+		  Log.log("Timeout reset to blank page");
+	  }, this.blankTime);
+  },
   /**
    * Resets the page changing timer with a delay.
    *
