@@ -40,7 +40,7 @@ Module.register('MMM-pages', {
    */
   start: function() {
     this.curPage = 0;
-
+    this.active = 0;
     // Disable rotation if an invalid input is given
     this.config.rotationTime = Math.max(this.config.rotationTime, 0);
     this.config.rotationDelay = Math.max(this.config.rotationDelay, 0);
@@ -75,6 +75,14 @@ Module.register('MMM-pages', {
         this.changePageBy(-payload, -1);
         this.updatePages();
         break;
+      case 'PAGE_ACTIVATE':
+	Log.log('[Pages]: received a notification to activate pages!');
+	this.active = true;
+	this.updatePages();
+      case 'PAGE_DEFAULT':
+	Log.log('[Pages]: received a notification to deactivate pages!');
+	this.active = false;
+	this.updatePages();
       case 'DOM_OBJECTS_CREATED':
         Log.log('[Pages]: received that all objects are created;'
           + 'will now hide things!');
@@ -127,6 +135,7 @@ Module.register('MMM-pages', {
       this.animatePageChange();
       this.resetTimerWithDelay(this.config.rotationDelay);
     } else { Log.error("[Pages]: Pages aren't properly defined!"); }
+    Log.log("current page", this.curPage);
   },
 
   /**
@@ -136,12 +145,19 @@ Module.register('MMM-pages', {
    */
   animatePageChange: function() {
     const self = this;
-
+    // if we are active display the curPage +1 (so we don't cycle through the blank page)
+    if(this.active){
+	self.doPage = this.mod(this.curPage+1, this.config.modules.length);
+	Log.log("this.active=True"); 
+    }else{
+	    self.doPage =0;
+	Log.log("this.active=False"); 
+    }
     // Hides all modules not on the current page. This hides any module not
     // meant to be shown.
     MM.getModules()
       .exceptWithClass(this.config.excludes)
-      .exceptWithClass(this.config.modules[this.curPage])
+      .exceptWithClass(this.config.modules[self.doPage])
       .enumerate(module => module.hide(
         self.config.animationTime / 2,
         { lockString: self.identifier }
@@ -149,10 +165,10 @@ Module.register('MMM-pages', {
 
     // Shows all modules meant to be on the current page, after a small delay.
     setTimeout(() => MM.getModules()
-      .withClass(self.config.modules[self.curPage])
+      .withClass(self.config.modules[self.doPage])
       .enumerate(module => module.show(
         self.config.animationTime / 2,
-        { lockString: self.identifier },
+        { lockString: self.identifier }
       )), this.config.animationTime / 2);
   },
 
@@ -179,3 +195,5 @@ Module.register('MMM-pages', {
     }
   },
 });
+
+//# sourceURL=MMM-pages.js
