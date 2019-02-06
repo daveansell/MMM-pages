@@ -3,5 +3,10 @@
     "eslint": "^5.2.0",
     "eslint-config-airbnb-base": "^13.0.0",
     "eslint-plugin-import": "^2.14.0"
-  }
+   },
+   "repository": {
+      "type": "git",
+      "url": "//https://github.com/daveansell/MMM-simple-swiper"
+   }
+
 }
